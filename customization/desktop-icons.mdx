@@ -1,0 +1,131 @@
+---
+title: "Customize Desktop Icons and Labels"
+sidebarTitle: "Desktop Icons"
+description: "Configure the icon, label, and click behavior of each desktop icon by editing the DesktopIcon components rendered inside the Desktop component's icon grid."
+---
+
+Each icon you see on the Bliss wallpaper is a `DesktopIcon` component. It handles single-click selection highlighting, double-click to open, and the white drop-shadow label. Customizing an icon is as simple as changing three props on its JSX call inside `Desktop.js`.
+
+## How DesktopIcon works
+
+`DesktopIcon` (imported as `n` in the built bundle, exported as `D` from `DesktopIcon.js`) accepts three props:
+
+| Prop | Type | Description |
+|---|---|---|
+| `app` | App definition object | The full app object from the `o` array. Double-clicking the icon calls `openWindow(app)`. |
+| `label` | `string` | The text label displayed beneath the icon on the desktop. |
+| `icon` | `ReactNode` | A Lucide icon JSX element. The component clones it and forces `size={36}` and `strokeWidth={1.5}`. |
+
+A single click selects the icon (highlights the label with `bg-xp-selection`). A double-click opens the window via the `WindowManagerContext`.
+
+```jsx
+// Minimal DesktopIcon usage
+<DesktopIcon
+  app={o[0]}
+  label="Welcome.txt"
+  icon={<FileText className="text-white fill-blue-400" />}
+/>
+```
+
+## The icon grid
+
+The desktop icons live in an absolutely-positioned `<div>` that sits in the top-left corner of the `Desktop` component, above the taskbar:
+
+```jsx
+// In Desktop.js — the icon grid container
+<div className="absolute top-0 left-0 bottom-10 p-2 flex flex-col flex-wrap gap-2 content-start">
+  <DesktopIcon app={o[0]} label="Welcome.txt"  icon={<FileText className="text-white fill-blue-400" />} />
+  <DesktopIcon app={o[1]} label="About Me.exe" icon={<Globe    className="text-blue-200" />} />
+  <DesktopIcon app={o[2]} label="My Projects"  icon={<Folder   className="text-yellow-200 fill-yellow-500" />} />
+  <DesktopIcon app={o[3]} label="Skills"       icon={<Cpu      className="text-gray-200" />} />
+  <DesktopIcon app={o[4]} label="Resume.doc"   icon={<FilePen  className="text-blue-200" />} />
+  <DesktopIcon app={o[5]} label="Contact"      icon={<Mail     className="text-yellow-200" />} />
+
+  {/* Recycle Bin lives below a spacer — see the inline app pattern below */}
+  <div className="mt-8">
+    <DesktopIcon app={{ id: "recycle", ... }} label="Recycle Bin" icon={<Trash2 className="text-gray-200" />} />
+  </div>
+</div>
+```
+
+`bottom-10` reserves 40 px for the taskbar. Icons are laid out in a column-first (`flex-col flex-wrap`) flow so they stack from top to bottom, then wrap to the next column.
+
+## Changing a label
+
+Find the `DesktopIcon` call for the app you want to rename and update the `label` prop:
+
+```jsx
+// Before
+<DesktopIcon app={o[1]} label="About Me.exe" icon={<Globe className="text-blue-200" />} />
+
+// After — custom label
+<DesktopIcon app={o[1]} label="My Website" icon={<Globe className="text-blue-200" />} />
+```
+
+<Note>
+  The `label` here is independent of `app.title`. The label is the desktop icon text only; `app.title` controls the window title bar. They can differ.
+</Note>
+
+## Changing an icon
+
+Swap the Lucide icon component in the `icon` prop. All icons come from `lucide-react`. Import the one you want and pass it as JSX with a `className` for color:
+
+```jsx
+import { Rocket } from "lucide-react";
+
+// Use light colors — icons render on the dark Bliss wallpaper
+<DesktopIcon
+  app={o[1]}
+  label="About Me.exe"
+  icon={<Rocket className="text-white" />}
+/>
+```
+
+Icons already used in the project (available without extra imports):
+
+| Icon component | Used for |
+|---|---|
+| `FileText` | Welcome.txt (Notepad) |
+| `Globe` | About Me (Internet Explorer) |
+| `Folder` | My Projects (File Explorer) |
+| `Cpu` | Skills (System Properties) |
+| `FilePen` | Resume.doc (WordPad) |
+| `Mail` | Contact (Outlook) |
+| `Trash2` | Recycle Bin |
+
+<Tip>
+  Because `DesktopIcon` forces `size={36}` on the cloned icon, you do not need to set a `size` prop yourself. Only `className` matters for desktop icons.
+</Tip>
+
+## The Recycle Bin: inline app definition
+
+The Recycle Bin is not in the main `o` array. Its app definition is written **inline** directly inside the `DesktopIcon` call. This pattern is useful for system-style icons that should not appear in the Start Menu:
+
+```jsx
+<DesktopIcon
+  app={{
+    id: "recycle",
+    title: "Recycle Bin",
+    icon: <Trash2 className="text-gray-400" />,
+    content: (
+      <div className="h-full bg-white p-4 font-tahoma flex flex-col items-center justify-center text-gray-500">
+        <Trash2 size={64} className="mb-4 opacity-50" />
+        <p>jQuery</p>
+        <p>Flash</p>
+        <p>Internet Explorer 6</p>
+        <p className="mt-4 text-xs italic">These belong here.</p>
+      </div>
+    ),
+    appType: "System Folder",
+    defaultSize: { width: 400, height: 300 },
+  }}
+  label="Recycle Bin"
+  icon={<Trash2 className="text-gray-200" />}
+/>
+```
+
+Because the object is not in `o`, it will never appear in `<StartMenu apps={o} />`. Use this pattern for any icon that should only be reachable from the desktop.
+
+## Reordering icons
+
+Icons render top-to-bottom in the order they appear in the JSX. To move an icon, simply cut and paste its `<DesktopIcon>` line to a new position within the grid `<div>`. The `mt-8` spacer div before the Recycle Bin creates the visual gap separating system icons from app icons — keep it below your regular icons.

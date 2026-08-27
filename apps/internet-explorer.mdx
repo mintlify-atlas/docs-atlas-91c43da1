@@ -1,0 +1,147 @@
+---
+title: "Internet Explorer: The About Me Page"
+sidebarTitle: "Internet Explorer"
+description: "The Internet Explorer app renders your About Me page inside a replica IE6 browser chrome complete with address bar, navigation buttons, and a Favorites toolbar."
+---
+
+The Internet Explorer app wraps your personal bio inside an authentic Internet Explorer 6 browser shell. Visitors see a familiar address bar, navigation buttons, and a Favorites toolbar before their eyes land on a clean, scrollable About Me page — combining nostalgic UI chrome with real, readable content about you.
+
+## What It Renders
+
+The window is split into two major regions: the **browser chrome** at the top and the **page content** below.
+
+### Browser Chrome
+
+The chrome is built from three stacked toolbar rows:
+
+<Steps>
+  <Step title="Menu bar">
+    A grey (`#ece9d8`) strip with six display-only menu labels: **File**, **Edit**, **View**, **Favorites**, **Tools**, and **Help**.
+  </Step>
+  <Step title="Navigation toolbar">
+    Contains the following controls from left to right:
+
+    - **Back** button (arrow-left icon, greyed out — no history)
+    - **Forward** button (arrow-right icon, greyed out)
+    - Vertical separator
+    - **Stop** button (red X icon)
+    - **Refresh** button (green circular-arrows icon)
+    - **Home** button (blue house icon)
+    - Vertical separator
+    - **Search** button (magnifying glass + label)
+    - **Favorites** button (star icon + label)
+  </Step>
+  <Step title="Address bar">
+    A full-width inset text field displaying the hard-coded URL:
+
+    ```
+    http://mycomputer/about.html
+    ```
+
+    Followed by a **Go** button on the right.
+  </Step>
+</Steps>
+
+### Page Content
+
+Below the chrome is a scrollable white canvas (`bg-white`, `overflow-y-auto`) containing the About Me page:
+
+<CardGroup cols={2}>
+  <Card title="Profile Photo Placeholder" icon="image">
+    A 192 × 192 px box with a blue gradient background and a bold "Dev" label. Replace this with a real `<img>` tag pointing to your photo.
+  </Card>
+  <Card title="Bio Paragraphs" icon="align-left">
+    Three paragraphs of introductory text sitting beside the photo placeholder, describing your background, philosophy, and hobbies.
+  </Card>
+  <Card title="Quick Facts Box" icon="list">
+    A blue-tinted info box (`bg-blue-50`, `border-blue-200`) with a **Quick Facts** heading and a bulleted list of personal details.
+  </Card>
+  <Card title="Page Header" icon="heading">
+    An `<h1>` reading **"About Me"** with a blue bottom border, anchoring the page visually.
+  </Card>
+</CardGroup>
+
+## Default Bio Content
+
+The three bio paragraphs in the source read:
+
+> Hello! I'm a passionate Software Engineer specializing in building exceptional digital experiences. Currently, I'm focused on building accessible, human-centered products.
+
+> My journey in web development started back in the days of table layouts and inline styles. While the tools have evolved from Dreamweaver to React, my core philosophy remains the same: build things that are fast, intuitive, and bring a little bit of joy to the user.
+
+> When I'm not at my computer, I'm usually exploring the outdoors, reading sci-fi, or trying to perfect my pour-over coffee recipe.
+
+## Default Quick Facts List
+
+The **Quick Facts** box contains four bullet points in the source:
+
+```
+• Based in San Francisco, CA
+• B.S. in Computer Science
+• Coffee enthusiast
+• Mechanical keyboard collector
+```
+
+## How to Customize the Bio and Quick Facts
+
+All bio content lives inside the `Me` component (named `Me` in `Desktop.js`). Locate the `<p>` paragraph elements and `<li>` list items inside the `content` render function and replace them with your own text.
+
+```jsx title="components/os/Desktop.js — bio paragraphs"
+<p>Hello! I'm a passionate Software Engineer specializing in building
+exceptional digital experiences. Currently, I'm focused on building
+accessible, human-centered products.</p>
+
+<p>My journey in web development started back in the days of table layouts
+and inline styles...</p>
+
+<p>When I'm not at my computer, I'm usually exploring the outdoors,
+reading sci-fi, or trying to perfect my pour-over coffee recipe.</p>
+```
+
+```jsx title="components/os/Desktop.js — Quick Facts list"
+<ul className="list-disc list-inside space-y-1 text-sm text-blue-900">
+  <li>Based in San Francisco, CA</li>
+  <li>B.S. in Computer Science</li>
+  <li>Coffee enthusiast</li>
+  <li>Mechanical keyboard collector</li>
+</ul>
+```
+
+<Tip>
+  To replace the photo placeholder with a real image, find the `w-48 h-48 bg-gray-200` div and swap it for an `<img>` tag:
+  ```jsx
+  <img src="/your-photo.jpg" alt="Your Name"
+       className="w-48 h-48 rounded-lg object-cover border border-gray-300 shadow-md" />
+  ```
+</Tip>
+
+<Note>
+  The address bar text (`http://mycomputer/about.html`) is a decorative, read-only `<span>` — it is not a real hyperlink and does not navigate anywhere. Edit it in the address bar `<span>` inside the chrome if you want a different URL shown.
+</Note>
+
+## App Definition Object
+
+The Internet Explorer app is the second entry in the `apps` array:
+
+```js title="components/os/Desktop.js"
+{
+  id: "about",
+  title: "About Me - Microsoft Internet Explorer",
+  icon: <Globe className="text-blue-500" />,
+  content: <InternetExplorerApp />,
+  appType: "Application",
+  defaultSize: { width: 800, height: 600 },
+  defaultPos: { x: 150, y: 50 },
+}
+```
+
+| Property | Value | Notes |
+|---|---|---|
+| `id` | `"about"` | Deep-link with `#about` in the URL hash |
+| `appType` | `"Application"` | Shown in the taskbar button |
+| `defaultSize` | `800 × 600 px` | Wide enough to show the two-column bio layout |
+| `defaultPos` | `{ x: 150, y: 50 }` | Opens near the top-centre of the desktop |
+
+<Tip>
+  The `800 × 600` default size mirrors a classic IE6 window resolution. Keep it wide to avoid wrapping the side-by-side photo + bio layout onto separate rows.
+</Tip>

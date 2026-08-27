@@ -1,0 +1,162 @@
+---
+title: "Add a New Desktop App to Your XP Portfolio"
+sidebarTitle: "Adding Apps"
+description: "Learn how to define a new app, create its content component, add it to the Desktop apps array, and place a DesktopIcon for it, all in one edit."
+---
+
+Every window you see on the desktop is driven by a plain JavaScript object called an **app definition**. Defining a new app means creating a React component for its content, adding one object to the `o` array in `Desktop.js`, and dropping a `DesktopIcon` call into the icon grid — three small edits, all in one file.
+
+## App definition object shape
+
+Each entry in the `o` (apps) array describes one openable window. All fields are required unless marked optional.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `string` | Unique identifier. Used for URL hash routing (`window.location.hash`). |
+| `title` | `string` | Window title bar text (e.g. `"My App - Notepad"`). |
+| `icon` | `ReactNode` | A Lucide icon JSX element shown in the taskbar and Start Menu. |
+| `content` | `ReactNode` | The full React component tree rendered inside the window's body. |
+| `appType` | `string` | Subtitle shown in the Start Menu beneath the app title. |
+| `defaultSize` | `{ width: number, height: number }` | Initial window dimensions in pixels. |
+| `defaultPos` | `{ x: number, y: number }` | *(Optional)* Initial top-left window position in pixels from the screen corner. |
+
+### appType values in use
+
+The existing apps use these `appType` strings, which mirror real Windows XP file type names:
+
+| appType | Used by |
+|---|---|
+| `"Text Document"` | Welcome.txt (Notepad) |
+| `"Application"` | About Me (Internet Explorer) |
+| `"File Folder"` | My Projects (File Explorer) |
+| `"Control Panel Item"` | Skills (System Properties) |
+| `"Rich Text Document"` | Resume.doc (WordPad) |
+| `"Mail Message"` | Contact (Outlook) |
+
+You can use any string — it is purely cosmetic, displayed as the subtitle in the Start Menu list.
+
+## Step-by-step: adding a new app
+
+<Steps>
+  <Step title="Create a content component">
+    Write a React component that will be rendered inside the window body. The component receives no props from the window system — it has full `h-full` height and should handle its own scrolling.
+
+    ```jsx
+    // You can define this inline at the top of Desktop.js
+    // or import it from a separate file.
+
+    const BlogContent = () => (
+      <div className="h-full flex flex-col bg-white font-tahoma text-sm overflow-y-auto">
+        <div className="flex items-center gap-4 px-2 py-1 bg-[#ece9d8] border-b border-white text-gray-700">
+          <span className="hover:bg-xp-selection hover:text-white px-1 cursor-default">File</span>
+          <span className="hover:bg-xp-selection hover:text-white px-1 cursor-default">Edit</span>
+          <span className="hover:bg-xp-selection hover:text-white px-1 cursor-default">View</span>
+        </div>
+        <div className="flex-1 p-4">
+          <h1 className="text-xl font-bold mb-2">My Blog</h1>
+          <p>Welcome to my writing!</p>
+        </div>
+      </div>
+    );
+    ```
+  </Step>
+
+  <Step title="Add an entry to the apps array">
+    Open `components/os/Desktop.js` and find the `o` array (it holds all six built-in app definitions). Append your new object:
+
+    ```js
+    // Inside Desktop.js — append to the `o` array
+
+    const o = [
+      // ...existing entries...
+      {
+        id: "blog",                                      // unique, used in URL hash
+        title: "Blog - Internet Explorer",              // window title bar
+        icon: <Globe className="text-blue-500" />,      // taskbar / Start Menu icon
+        content: <BlogContent />,                       // your component from Step 1
+        appType: "Application",                         // Start Menu subtitle
+        defaultSize: { width: 700, height: 500 },       // initial window size (px)
+        defaultPos: { x: 200, y: 80 },                  // initial position from top-left (px)
+      },
+    ];
+    ```
+
+    <Note>
+      `defaultPos` is optional. If omitted, the window manager places the window at its default position. Set it to stagger multiple windows so they don't stack exactly on top of each other.
+    </Note>
+  </Step>
+
+  <Step title="Add a DesktopIcon in the icon grid">
+    Still in `Desktop.js`, find the icon grid `<div>` — it is the `absolute` div inside the `Desktop` component's return. Add a `<DesktopIcon>` (imported as `n`) for your new app:
+
+    ```jsx
+    // Inside the Desktop component's JSX — icon grid div
+
+    <div className="absolute top-0 left-0 bottom-10 p-2 flex flex-col flex-wrap gap-2 content-start">
+      {/* ...existing icons... */}
+      <n
+        app={o.find(a => a.id === "blog")}
+        label="My Blog"
+        icon={<Globe className="text-white" />}
+      />
+    </div>
+    ```
+
+    The `label` prop controls the text shown beneath the icon on the desktop. The `icon` prop is the desktop icon — use lighter colors (`text-white`, `text-blue-200`) here since it renders on the dark Bliss wallpaper.
+  </Step>
+
+  <Step title="(Optional) Verify it appears in the Start Menu">
+    The `<StartMenu>` component (rendered as `<F apps={o} />` in `Desktop.js`) automatically receives the full `o` array and renders a button for every entry. No extra changes are needed — your new app appears in the Start Menu left column automatically once it is in the `o` array.
+
+    ```jsx
+    // This line in Desktop.js already passes all apps — nothing to change.
+    <F apps={o} />
+    ```
+  </Step>
+</Steps>
+
+## Complete minimal example
+
+Here is the full diff you would make to `Desktop.js` to add a blog window with its own Notepad-style content:
+
+```jsx
+// 1. Define the content component (add near the top of Desktop.js)
+const BlogContent = () => (
+  <div className="h-full flex flex-col bg-white font-tahoma text-sm">
+    <div className="flex items-center gap-4 px-2 py-1 bg-[#ece9d8] border-b border-white text-gray-700">
+      <span className="hover:bg-xp-selection hover:text-white px-1 cursor-default">File</span>
+      <span className="hover:bg-xp-selection hover:text-white px-1 cursor-default">Edit</span>
+    </div>
+    <textarea
+      className="flex-1 w-full p-2 resize-none outline-none font-inter text-base xp-scrollbar"
+      defaultValue="Welcome to my blog!"
+      spellCheck={false}
+    />
+  </div>
+);
+
+// 2. Add to the `o` array
+const o = [
+  // ...existing six entries...
+  {
+    id: "blog",
+    title: "Blog.txt - Notepad",
+    icon: <FileText className="text-blue-400 fill-white" />,
+    content: <BlogContent />,
+    appType: "Text Document",
+    defaultSize: { width: 500, height: 400 },
+    defaultPos: { x: 400, y: 120 },
+  },
+];
+
+// 3. Add a DesktopIcon in the icon grid JSX
+<n
+  app={o[o.length - 1]}   // reference to the last entry (your new app)
+  label="Blog.txt"
+  icon={<FileText className="text-white fill-blue-400" />}
+/>
+```
+
+<Tip>
+  To deep-link directly to your new app on page load, navigate to `index.html#blog` (or whatever `id` you chose). The `useEffect` in the `Desktop` component reads `window.location.hash` and opens the matching app automatically.
+</Tip>

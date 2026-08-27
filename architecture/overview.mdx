@@ -1,0 +1,99 @@
+---
+title: "Architecture Overview: How the XP Desktop Is Built"
+sidebarTitle: "Overview"
+description: "Understand how Windows XP Portfolio composes its desktop, window system, taskbar, and apps using React context, hooks, and modular components."
+---
+
+Windows XP Portfolio is a React single-page application that simulates a Windows XP desktop environment. Every visual element you see — the wallpaper, draggable windows, taskbar, Start menu, and desktop icons — is composed from a small, focused set of React components wired together through a single global context. Understanding the three architectural layers and how they relate to each other makes it easy to extend the portfolio with new apps or customize its behavior.
+
+## Component Tree
+
+The application mounts a single root component, `Desktop`, wrapped in the `WindowManagerProvider` context provider. Everything that needs to open, close, or inspect windows lives inside that provider.
+
+```
+App (main.js)
+└── WindowManagerProvider       ← global window state
+    └── Desktop                 ← full-screen canvas
+        ├── DesktopIcon × 7     ← clickable shortcuts on the wallpaper
+        ├── Window × N          ← one per open app (rendered from windows[])
+        ├── StartMenu           ← slides up from the taskbar
+        └── Taskbar             ← fixed bottom bar with clock
+```
+
+At runtime `N` is the number of entries in the `windows` state array managed by `WindowManagerContext`. When a user opens or closes a window, the array updates and React re-renders only the affected `Window` instances.
+
+## The Three Layers
+
+The codebase is divided into three logical layers, each with a clear responsibility.
+
+### Layer 1 — OS Chrome
+
+These components paint the desktop itself and provide the interactive shell the user sees.
+
+| Component | File | Role |
+|---|---|---|
+| `Desktop` | `components/os/Desktop.js` | Root canvas; renders wallpaper, icon grid, all open `Window`s, `StartMenu`, and `Taskbar` |
+| `Taskbar` | `components/os/Taskbar.js` | Fixed 40 px bar at the bottom; Start button, per-window buttons, live clock |
+| `DesktopIcon` | `components/os/DesktopIcon.js` | Single clickable icon on the wallpaper |
+| `StartMenu` | `components/os/StartMenu.js` | Animated panel listing all apps; appears above the taskbar |
+
+### Layer 2 — Window Management
+
+`WindowManagerContext` (in `context/WindowManagerContext.js`) is the heart of the application. It holds an array of window-state objects and exposes `openWindow`, `closeWindow`, `minimizeWindow`, `restoreWindow`, `focusWindow`, and `toggleStartMenu` as stable `useCallback` references. The `Window` component (`components/os/Window.js`) reads a single entry from that array and renders the XP-style title bar, minimize/close buttons, and a `framer-motion` drag container around the app's content.
+
+### Layer 3 — App Content
+
+The six app components are plain React components that render their UI inside the content area of a `Window`. They have no awareness of the window system — they just fill the space they're given.
+
+| App ID | Title | Mimics |
+|---|---|---|
+| `welcome` | `Welcome.txt - Notepad` | Windows Notepad |
+| `about` | `About Me - Microsoft Internet Explorer` | Internet Explorer 6 |
+| `projects` | `Projects` | Windows Explorer folder view |
+| `skills` | `System Properties` | Control Panel dialog |
+| `resume` | `Resume.doc - WordPad` | WordPad |
+| `contact` | `New Message` | Outlook Express compose window |
+
+## URL Hash Routing
+
+Each time a window gains focus, `WindowManagerContext` updates `window.location.hash` to the focused window's `id` (e.g. `#about`). When every window is closed, the hash is cleared to `""`.
+
+On first load, `Desktop` reads the current hash inside a `useEffect` and calls `openWindow` for the matching app:
+
+```js
+useEffect(() => {
+  const id = window.location.hash.replace("#", "");
+  if (id) {
+    const app = apps.find(a => a.id === id);
+    if (app) openWindow(app);
+  } else {
+    openWindow(apps[0]); // default: Welcome.txt
+  }
+}, []);
+```
+
+This means every open window is deep-linkable — sharing `https://yourportfolio.dev/#projects` will land the visitor directly inside the Projects folder view.
+
+## Build & Output
+
+The project uses **Vite** as its bundler. `vite build` compiles all source into a `dist/` directory containing:
+
+- `index.html` — the single HTML shell, with `<link rel="modulepreload">` tags for each JS chunk so the browser can fetch them in parallel before execution
+- `assets/main.js` — the entry-point module
+- `assets/main.css` — compiled Tailwind CSS
+- `context/WindowManagerContext.js`, `components/os/*.js` — individually preloaded ES modules
+
+Because the output is pure static HTML and JavaScript, the portfolio can be hosted on any static-file host (GitHub Pages, Netlify, Vercel, etc.) with no server-side runtime.
+
+## Next Steps
+
+Dive deeper into the two most interesting subsystems:
+
+<CardGroup cols={2}>
+  <Card title="Window Manager" icon="window" href="/architecture/window-manager">
+    How `WindowManagerContext` tracks focus, z-index, minimize state, and Start Menu visibility for every open window.
+  </Card>
+  <Card title="Core Components" icon="layers" href="/architecture/components">
+    Props, rendering behavior, and interaction model for Desktop, Window, Taskbar, DesktopIcon, and StartMenu.
+  </Card>
+</CardGroup>

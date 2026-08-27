@@ -1,0 +1,133 @@
+---
+title: "Deploy Your Windows XP Portfolio to the Web"
+sidebarTitle: "Deployment"
+description: "Build the Windows XP Portfolio with Vite and deploy the static output to GitHub Pages, Vercel, Netlify, or Cloudflare Pages with zero server configuration."
+---
+
+The Windows XP Portfolio is a fully static single-page app built with Vite. After running the build command, you get a `dist/` folder of plain HTML, CSS, and JavaScript that can be served from any static hosting provider with no backend, no Node.js runtime, and no special server configuration.
+
+## Building for production
+
+```bash
+npm run build
+```
+
+Vite compiles and bundles everything into `dist/`. To preview the production build locally before deploying:
+
+```bash
+npm run preview
+```
+
+`npm run preview` spins up a local static server pointing at `dist/` — useful for catching any issues that only appear in the production build.
+
+## Routing note: no server-side redirects needed
+
+The app uses `window.location.hash` for routing — each open window updates the URL hash (e.g. `/#about`, `/#projects`). Because hash changes never trigger a server request, there are no 404 problems on refresh. **Every static host works without any redirect rules or `_redirects` files.**
+
+## Deploying
+
+<Tabs>
+  <Tab title="GitHub Pages">
+    The repo ships with a `.nojekyll` file at the root. This file tells GitHub Pages to skip its Jekyll processing step, which is required to correctly serve Vite's hashed asset filenames (e.g. `main-Bx1yZ.js`). Without it, files starting with an underscore or containing dots in their paths may be blocked.
+
+    <Steps>
+      <Step title="Build the project">
+        ```bash
+        npm run build
+        ```
+        The output lands in `dist/`.
+      </Step>
+
+      <Step title="Copy .nojekyll into dist/">
+        The `.nojekyll` file must be present in the deployed directory:
+
+        ```bash
+        cp .nojekyll dist/.nojekyll
+        ```
+      </Step>
+
+      <Step title="Push dist/ to the gh-pages branch">
+        The easiest one-liner uses the `gh-pages` npm package:
+
+        ```bash
+        npx gh-pages -d dist
+        ```
+
+        Or push manually:
+
+        ```bash
+        git subtree push --prefix dist origin gh-pages
+        ```
+      </Step>
+
+      <Step title="Enable GitHub Pages in repo settings">
+        Go to **Settings → Pages**, set the source to the `gh-pages` branch, root directory. GitHub will provide your public URL (e.g. `https://yourusername.github.io/windows-xp/`).
+      </Step>
+
+      <Step title="(Subdirectory deploys) Set base in vite.config">
+        If your site is at a subdirectory path (e.g. `yourusername.github.io/windows-xp/`), add a `base` option to your Vite config so asset paths resolve correctly:
+
+        ```js
+        // vite.config.js
+        export default {
+          base: "/windows-xp/",
+        };
+        ```
+
+        If you are deploying to a custom domain at the root, you can omit `base` entirely.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="Vercel">
+    Vercel auto-detects Vite projects and configures everything for you.
+
+    1. Go to [vercel.com](https://vercel.com) and click **Add New → Project**.
+    2. Import your GitHub repository.
+    3. Vercel will detect the framework as **Vite** and pre-fill the settings:
+       - **Build command:** `npm run build`
+       - **Output directory:** `dist`
+    4. Click **Deploy**.
+
+    No further configuration is needed. Vercel assigns a `*.vercel.app` URL immediately, and you can attach a custom domain from the project settings.
+
+    <Tip>
+      Vercel deploys a preview URL for every pull request automatically — useful for reviewing portfolio changes before they go live.
+    </Tip>
+  </Tab>
+
+  <Tab title="Netlify">
+    1. Go to [netlify.com](https://netlify.com) and click **Add new site → Import an existing project**.
+    2. Connect your GitHub account and select the repository.
+    3. Set the build settings:
+       - **Build command:** `npm run build`
+       - **Publish directory:** `dist`
+    4. Click **Deploy site**.
+
+    Netlify assigns a random `*.netlify.app` subdomain. Rename it or connect a custom domain from **Site settings → Domain management**.
+
+    Because the app uses hash routing, you do not need a `_redirects` file or `netlify.toml` rewrite rules.
+  </Tab>
+
+  <Tab title="Cloudflare Pages">
+    1. Go to the [Cloudflare dashboard](https://dash.cloudflare.com) and navigate to **Workers & Pages → Create application → Pages → Connect to Git**.
+    2. Select your repository and configure the build:
+       - **Framework preset:** Vite (or leave as None)
+       - **Build command:** `npm run build`
+       - **Build output directory:** `dist`
+    3. Click **Save and Deploy**.
+
+    Cloudflare Pages provides a `*.pages.dev` URL and global CDN distribution. Custom domains are configured under the Pages project's **Custom domains** tab.
+  </Tab>
+</Tabs>
+
+## Custom domain
+
+All four providers support custom domains with HTTPS at no extra cost:
+
+1. Purchase a domain from any registrar.
+2. In your hosting provider's dashboard, add your domain under the project's domain/DNS settings.
+3. The provider will give you either a **CNAME record** (for subdomain) or **A/AAAA records** (for apex domain) to add at your registrar.
+4. DNS propagation typically takes a few minutes to an hour.
+
+After the domain is connected, the provider automatically provisions and renews an SSL certificate via Let's Encrypt.

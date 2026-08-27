@@ -1,0 +1,217 @@
+---
+title: "Core Components: Desktop, Window, Taskbar, and More"
+sidebarTitle: "Components"
+description: "Reference for the five core OS-chrome React components — Desktop, Window, Taskbar, DesktopIcon, and StartMenu — including their props and rendering behavior."
+---
+
+The five OS-chrome components are the visual shell of the portfolio. They are responsible for painting the wallpaper, rendering draggable windows, driving the taskbar, and surfacing the Start Menu. None of them contain portfolio content — that lives in the six app components that each `Window` wraps. Understanding how these shell components work together makes it straightforward to customise the look and feel of the desktop without touching any app logic.
+
+---
+
+## Desktop
+
+**Source:** `components/os/Desktop.js`
+
+`Desktop` is the root canvas component. It fills the entire viewport (`w-screen h-screen overflow-hidden`) and renders every other OS-chrome element as children. It is the only component that owns the static `apps` array — an ordered list of the six app definitions — and it passes slices of that array down to `DesktopIcon`, `StartMenu`, and the initial `openWindow` call.
+
+### What It Renders
+
+```
+Desktop (full-screen, wallpaper background)
+├── DesktopIcon × 7       (top-left icon grid, plus Recycle Bin offset below)
+├── Window × N            (one per entry in windows[], mapped from context)
+├── StartMenu             (receives the apps array as a prop)
+└── Taskbar               (no props; reads context directly)
+```
+
+### `apps` Array
+
+`Desktop` defines six app objects inline. Each object has the shape required by `openWindow`:
+
+| id | title | appType | defaultSize |
+|---|---|---|---|
+| `welcome` | `Welcome.txt - Notepad` | Text Document | 500 × 400 |
+| `about` | `About Me - Microsoft Internet Explorer` | Application | 800 × 600 |
+| `projects` | `Projects` | File Folder | 700 × 500 |
+| `skills` | `System Properties` | Control Panel Item | 450 × 500 |
+| `resume` | `Resume.doc - WordPad` | Rich Text Document | 650 × 700 |
+| `contact` | `New Message` | Mail Message | 550 × 450 |
+
+A seventh "app" — the **Recycle Bin** — is defined inline inside the `DesktopIcon` call and is not part of the main `apps` array. It has no entry in the taskbar and cannot be deep-linked.
+
+### URL Hash Auto-Open
+
+`Desktop` calls `useWindowManager()` and, inside a `useEffect` that fires once on mount, reads `window.location.hash`:
+
+```js
+useEffect(() => {
+  const id = window.location.hash.replace("#", "");
+  if (id) {
+    const app = apps.find(a => a.id === id);
+    if (app) openWindow(app);
+  } else {
+    openWindow(apps[0]); // Welcome.txt by default
+  }
+}, []);
+```
+
+If a matching app is found the window opens immediately, giving the user the app they navigated to. If the hash is empty or unrecognised, `Welcome.txt` opens as the default landing experience.
+
+### Click-Away to Close Start Menu
+
+`Desktop`'s root `div` has an `onClick` handler that calls `toggleStartMenu()` (which closes it) whenever `isStartMenuOpen` is `true`. This gives the expected "click anywhere outside the menu to dismiss it" behaviour.
+
+---
+
+## Window
+
+**Source:** `components/os/Window.js`
+
+`Window` renders a single app inside an XP-style chrome frame. It is driven entirely by one `windowData` prop — a window-state object from the `windows` array in context.
+
+### Props
+
+<ParamField path="windowData" type="WindowState" required>
+  The full window-state object from `WindowManagerContext`. `Window` destructures `id`, `title`, `icon`, `content`, `isMinimized`, `isFocused`, `zIndex`, `defaultSize`, and `defaultPos` from this object.
+</ParamField>
+
+### Rendering Behaviour
+
+When `isMinimized` is `true`, `Window` returns `null` — the component stays mounted so no state is lost, but it is invisible and takes no space.
+
+When visible, `Window` wraps the app content in a `framer-motion` `motion.div` that provides:
+
+- **Drag** — `drag={true}` with `dragMomentum: false`. Constrained to `{ left: 0, top: 0, right: window.innerWidth - 100, bottom: window.innerHeight - 100 }` so a window can never be dragged entirely off screen.
+- **Resize detection** — a `useEffect` listens for the `resize` event and sets a boolean `isMobile` when `window.innerWidth < 768`. In mobile mode the window expands to fill the full screen and dragging is disabled.
+- **Enter/exit animation** — `initial: { opacity: 0, scale: 0.95 }`, `animate: { opacity: 1, scale: 1 }`, `exit: { opacity: 0, scale: 0.95, y: window.innerHeight }` using a spring transition (`damping: 25, stiffness: 300`).
+- **Focus on pointer down** — `onPointerDown` calls `focusWindow(id)`, so clicking anywhere on a window raises it to the top.
+
+### Title Bar
+
+The title bar is a fixed-height `h-8` strip at the top of the window. It uses a blue gradient when the window is focused (`isFocused: true`) and a muted grey-blue gradient when it is in the background.
+
+The three control buttons in the top-right corner map directly to context actions:
+
+| Button | Icon | Action |
+|---|---|---|
+| Minimise | `Minus` (lucide) | `minimizeWindow(id)` |
+| Maximise | `Square` (lucide) | Currently disabled (`opacity-50 cursor-not-allowed`) |
+| Close | `X` (lucide, red) | `closeWindow(id)` |
+
+Each button calls `e.stopPropagation()` before its action so the click does not bubble up to `Desktop`'s click-away handler.
+
+### Size and Position
+
+On desktop (`isMobile === false`):
+
+- **Width** — `defaultSize.width ?? 600`
+- **Height** — `defaultSize.height ?? 400`
+- **Initial x** — `defaultPos.x ?? (window.innerWidth - width) / 2 + random jitter`
+- **Initial y** — `defaultPos.y ?? (window.innerHeight - height) / 2 + random jitter`
+
+The random ±20 px jitter means that if several windows open at the same default position they are slightly offset, preserving the classic XP stacking visual.
+
+---
+
+## Taskbar
+
+**Source:** `components/os/Taskbar.js`
+
+`Taskbar` is a fixed, always-on-top bar anchored to the bottom of the screen. It reads all necessary state directly from `useWindowManager()` — it accepts no props.
+
+### Layout
+
+```
+[Start Button]  [Window Button × N]          [Clock]
+```
+
+- The **Start Button** calls `toggleStartMenu()` on click and applies a pressed-in style when `isStartMenuOpen` is `true`.
+- Each **Window Button** is rendered from `windows.filter(w => w.isOpen)`. Clicking a button runs this toggle logic:
+  - If the window is currently focused and not minimised → `minimizeWindow(id)`
+  - Otherwise → `restoreWindow(id)` (which also calls `focusWindow`)
+- The **Clock** displays the current local time, updated every second via `setInterval` in a `useEffect`.
+
+### Z-Index
+
+`Taskbar` uses `z-[9999]`, placing it above every application window (which start at `zIndex: 10` and grow upward) and above the Start Menu (`z-[9998]`).
+
+### Styling
+
+The taskbar background is a vertical gradient from `xp-taskbar-start` to `xp-taskbar-end` (Tailwind theme tokens). The clock area uses a distinct blue gradient with a left border to visually separate it from the window buttons — mimicking the Windows XP system tray section.
+
+---
+
+## DesktopIcon
+
+**Source:** `components/os/DesktopIcon.js`
+
+`DesktopIcon` renders a single shortcut on the wallpaper — an icon image above a text label. It is a thin wrapper around `openWindow` with a light selection visual to mirror the XP single-click-to-select behaviour.
+
+### Props
+
+<ParamField path="app" type="AppDefinition" required>
+  The full app-definition object (same shape as entries in `Desktop`'s `apps` array). Passed directly to `openWindow` when the user activates the icon.
+</ParamField>
+
+<ParamField path="label" type="string" required>
+  The text label rendered below the icon image (e.g. `"About Me.exe"`, `"My Projects"`).
+</ParamField>
+
+<ParamField path="icon" type="ReactNode" required>
+  A React element (typically a lucide icon) rendered at `size={36}` and `strokeWidth={1.5}` via `React.cloneElement`. The desktop icon rendering always overrides these props for visual consistency.
+</ParamField>
+
+### Interaction Model
+
+`DesktopIcon` tracks a `selected` boolean in local state.
+
+- **Single click** (`onClick`) — sets `selected: true`, giving the label a blue highlight tint.
+- **Double click** (`onDoubleClick`) — calls `openWindow(app)` and resets `selected: false`.
+
+<Note>
+  In the current implementation a double-click is required to open a window from a desktop icon. A single click only selects it visually, matching the default Windows XP desktop icon behaviour.
+</Note>
+
+---
+
+## StartMenu
+
+**Source:** `components/os/StartMenu.js`
+
+`StartMenu` is a conditionally rendered panel that slides up from the bottom-left of the screen when `isStartMenuOpen` is `true`. It receives the full `apps` array as a prop and maps it into a scrollable list of launch buttons.
+
+### Props
+
+<ParamField path="apps" type="AppDefinition[]" required>
+  The array of app-definition objects defined in `Desktop`. Each entry is rendered as a row in the left-hand panel of the Start Menu.
+</ParamField>
+
+### Rendering Behaviour
+
+The component reads `isStartMenuOpen`, `openWindow`, and `toggleStartMenu` from `useWindowManager()`. When `isStartMenuOpen` is `false` it returns `null`.
+
+When visible, it uses `AnimatePresence` and a `framer-motion` `motion.div` for its enter (`opacity: 0 → 1, y: 20 → 0`) and exit (`opacity: 1 → 0, y: 0 → 20`) animations over 150 ms.
+
+### Layout
+
+```
+┌─────────────────────────────────────────┐
+│ [User avatar]  Developer                │  ← blue gradient header
+├────────────────────────┬────────────────┤
+│  [App list]            │ [Places panel] │
+│  welcome               │ My Documents   │
+│  about                 │ Control Panel  │
+│  projects              │ ─────────────  │
+│  skills                │ Help & Support │
+│  resume                │                │
+│  contact               │                │
+├────────────────────────┴────────────────┤
+│                              [Log Off]  │  ← dark blue footer
+└─────────────────────────────────────────┘
+```
+
+Each app row in the left panel shows the app's `icon`, `title` (bold), and `appType` (small grey text). Clicking a row calls `openWindow(app)` followed by `toggleStartMenu()` to close the menu.
+
+The right-hand "places" panel contains static `My Documents`, `Control Panel`, and `Help and Support` buttons. These are decorative — they do not open windows — preserving the visual authenticity of the XP Start Menu without requiring a full file-system simulation.
+
+The `z-index` for `StartMenu` is `z-[9998]`, one level below the Taskbar (`z-[9999]`), so the taskbar always renders on top of the open menu.

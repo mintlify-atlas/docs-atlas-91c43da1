@@ -1,0 +1,141 @@
+---
+title: "WordPad: Display Your Resume as a Rich Text Doc"
+sidebarTitle: "WordPad"
+description: "The WordPad app renders your resume inside a Windows XP WordPad window with a formatting toolbar, font selectors, and a white document canvas."
+---
+
+The WordPad app presents your resume as if it were an open `.doc` file in Windows XP WordPad. A formatting toolbar with familiar controls sits above a grey canvas area, and your resume content is rendered on a white A4-style document card centred within it — giving the whole experience the feel of a real word processor.
+
+## Formatting Toolbar
+
+The toolbar is rendered as two rows beneath the WordPad menu bar.
+
+### Menu Bar
+
+A grey (`#ece9d8`) strip with six display-only menu labels: **File**, **Edit**, **View**, **Insert**, **Format**, and **Help**.
+
+### Toolbar Row
+
+The formatting toolbar contains the following controls from left to right:
+
+<CardGroup cols={2}>
+  <Card title="Save" icon="save">
+    A Save button (floppy-disk icon, blue). Display-only — clicking it does not trigger a file save.
+  </Card>
+  <Card title="Print" icon="printer">
+    A Print button (printer icon, grey). Display-only.
+  </Card>
+  <Card title="Font Family" icon="type">
+    A `<select>` dropdown with three options: **Arial**, **Times New Roman**, and **Inter** (selected by default).
+  </Card>
+  <Card title="Font Size" icon="text">
+    A `<select>` dropdown with sizes **10**, **11**, **12** (selected by default), and **14**.
+  </Card>
+  <Card title="Bold / Italic / Underline" icon="bold">
+    Three toggle-style buttons. **Bold** is rendered with an active/pressed style (`bg-gray-200 shadow-inner`); Italic and Underline are in their default unpressed state.
+  </Card>
+  <Card title="Alignment" icon="align-left">
+    Three alignment buttons: **Left** (active, `bg-gray-200 shadow-inner`), **Center**, and **Right**.
+  </Card>
+</CardGroup>
+
+<Note>
+  All toolbar controls are presentational. The font dropdowns and formatting buttons do not apply styles to the document text — they are there to complete the WordPad visual illusion. To make them functional you would need to wire them to document state.
+</Note>
+
+## Resume Document Structure
+
+Below the toolbar, a grey background (`bg-gray-200`) acts as the "desktop" of the word processor. A centred white card (`max-w-2xl`, `shadow-md`, `p-8`) represents the document page and contains your resume.
+
+### Header
+
+```
+JOHN DOE
+Frontend Developer | San Francisco, CA
+john.doe@example.com | github.com/johndoe
+```
+
+The name is a large bold `<h1>`, followed by a location line and a blue underlined contact/links line — all centred, separated from the body by a double bottom border.
+
+### Experience Section
+
+Two roles are listed under the `EXPERIENCE` heading:
+
+| Role | Company | Period |
+|---|---|---|
+| Senior Frontend Engineer | TechCorp Inc. | 2021 – Present |
+| Frontend Developer | WebSolutions LLC | 2018 – 2021 |
+
+Each role includes a company name in italic grey, followed by a bulleted list of three accomplishments.
+
+**Senior Frontend Engineer bullet points:**
+- Led the migration of a legacy Angular app to React/Next.js, improving performance by 40%.
+- Architected a reusable component library used by 5 different product teams.
+- Mentored junior developers and established frontend testing standards.
+
+**Frontend Developer bullet points:**
+- Developed responsive web applications for various clients using React and Vue.
+- Integrated RESTful APIs and managed state with Redux.
+- Collaborated closely with designers to ensure pixel-perfect implementations.
+
+### Education Section
+
+```
+B.S. Computer Science          2014 – 2018
+University of Technology
+```
+
+## How to Edit the Resume Content
+
+All resume content is hardcoded as JSX inside the `Fe` component in `Desktop.js`. To update it:
+
+<Steps>
+  <Step title="Update the header">
+    Find the centred header block and replace the name, title, location, and contact details:
+
+    ```jsx title="components/os/Desktop.js — resume header"
+    <h1 className="text-3xl font-bold mb-1">JANE SMITH</h1>
+    <p className="text-sm text-gray-600">Full-Stack Engineer | New York, NY</p>
+    <p className="text-sm text-blue-600 underline">
+      jane@example.com | github.com/janesmith
+    </p>
+    ```
+  </Step>
+  <Step title="Edit experience entries">
+    Each job is a `<div className="mb-4">` block. Add or remove blocks as needed. Keep the `flex justify-between font-bold` row for the job title and date range, followed by the italic company name and a `<ul>` of bullet points.
+  </Step>
+  <Step title="Update education">
+    The Education section follows the same flex-row layout. Add multiple education entries by duplicating the `<div>` block.
+  </Step>
+</Steps>
+
+<Tip>
+  The document canvas scrolls independently (`overflow-y-auto`, `xp-scrollbar`) so you can add as many sections as your resume requires without worrying about the window height. Consider adding a **Skills**, **Certifications**, or **Projects** section by adding additional `<div className="mb-6">` blocks after Education.
+</Tip>
+
+## App Definition Object
+
+The WordPad app is the fifth entry in the `apps` array:
+
+```js title="components/os/Desktop.js"
+{
+  id: "resume",
+  title: "Resume.doc - WordPad",
+  icon: <FilePen className="text-blue-600" />,
+  content: <WordPadApp />,
+  appType: "Rich Text Document",
+  defaultSize: { width: 650, height: 700 },
+  defaultPos: { x: 300, y: 50 },
+}
+```
+
+| Property | Value | Notes |
+|---|---|---|
+| `id` | `"resume"` | Deep-link with `#resume` in the URL hash |
+| `appType` | `"Rich Text Document"` | Shown in the taskbar button |
+| `defaultSize` | `650 × 700 px` | Tall window to accommodate a full resume page |
+| `defaultPos` | `{ x: 300, y: 50 }` | Opens near the top-right of the desktop |
+
+<Tip>
+  The `700 px` default height is intentional — a resume with multiple sections needs vertical space. If your resume is shorter, you can reduce `defaultSize.height` in the app definition to keep the window proportionate.
+</Tip>

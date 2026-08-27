@@ -1,0 +1,108 @@
+---
+title: "Notepad: Your Portfolio's Welcome Message"
+sidebarTitle: "Notepad"
+description: "The Notepad app opens automatically on page load and displays a plain-text welcome message styled like Windows XP Notepad with a scrollable textarea."
+---
+
+The Notepad app is the first thing visitors see when they land on your portfolio. It launches automatically on page load — before any other window — and presents a plain-text welcome message inside a faithful replica of the Windows XP Notepad application, complete with a classic grey menu bar and a scrollable white textarea.
+
+## What It Renders
+
+The app is composed of two stacked layers:
+
+**Menu bar** — A grey (`#ece9d8`) toolbar that mimics the Notepad menu strip. It contains five non-functional (display-only) menu labels that reinforce the XP aesthetic:
+
+<CardGroup cols={5}>
+  <Card title="File" />
+  <Card title="Edit" />
+  <Card title="Format" />
+  <Card title="View" />
+  <Card title="Help" />
+</CardGroup>
+
+**Textarea** — A full-height, resizable-disabled `<textarea>` rendered below the menu bar. It uses the `font-inter` class, has no visible outline, and is pre-filled with the `defaultValue` welcome message. The textarea is scrollable (`xp-scrollbar`) so long messages don't overflow the window.
+
+## Default Welcome Text
+
+The textarea is pre-loaded with this exact message from the source:
+
+```
+Welcome to my portfolio!
+
+I'm a frontend developer who loves building interactive experiences. 
+I built this portfolio to look and feel like an early-2000s operating system because I believe software should be fun, tactile, and demonstrate craft.
+
+Feel free to explore:
+- Open "About Me.exe" to learn more about my background.
+- Check "My Documents > Projects" for my recent work.
+- View "System Properties" to see my skills.
+- Read "Resume.doc" for the formal stuff.
+
+Click any icon on the desktop to begin.
+
+Enjoy your stay!
+```
+
+<Note>
+  This is the literal `defaultValue` string passed to the `<textarea>` element in `Desktop.js`. It is **not** fetched from a CMS or external file — editing it means editing the source directly.
+</Note>
+
+## How to Customize the Welcome Message
+
+Open `components/os/Desktop.js` and locate the `ke` component (the Notepad renderer). Find the `defaultValue` prop on the `<textarea>` element and replace the template literal with your own text:
+
+```jsx title="components/os/Desktop.js"
+<textarea
+  className="flex-1 w-full p-2 resize-none outline-none font-inter text-base xp-scrollbar"
+  defaultValue={`Welcome to my portfolio!
+
+I'm a frontend developer who loves building interactive experiences. 
+I built this portfolio to look and feel like an early-2000s operating system because I believe software should be fun, tactile, and demonstrate craft.
+
+Feel free to explore:
+- Open "About Me.exe" to learn more about my background.
+- Check "My Documents > Projects" for my recent work.
+- View "System Properties" to see my skills.
+- Read "Resume.doc" for the formal stuff.
+
+Click any icon on the desktop to begin.
+
+Enjoy your stay!`}
+  spellCheck={false}
+/>
+```
+
+<Tip>
+  Keep line breaks intentional — the textarea renders plain text exactly as written. Use blank lines between paragraphs and hyphens for bullet points to preserve the plain-text Notepad aesthetic.
+</Tip>
+
+## Auto-Launch Behaviour
+
+The Notepad window opens automatically because `Desktop.js` calls `openWindow(apps[0])` on mount when no URL hash is present. To change which app opens first, update the `useEffect` in the `Desktop` component or add a URL hash (`#about`, `#projects`, etc.) to deep-link directly to another app.
+
+## App Definition Object
+
+The Notepad app is the first entry in the `apps` array in `Desktop.js`:
+
+```js title="components/os/Desktop.js"
+{
+  id: "welcome",
+  title: "Welcome.txt - Notepad",
+  icon: <FileText className="text-blue-400 fill-white" />,
+  content: <NotepadApp />,
+  appType: "Text Document",
+  defaultSize: { width: 500, height: 400 },
+  defaultPos: { x: 100, y: 100 },
+}
+```
+
+| Property | Value | Notes |
+|---|---|---|
+| `id` | `"welcome"` | Used for URL hash deep-linking (`#welcome`) |
+| `appType` | `"Text Document"` | Shown in the window footer / taskbar |
+| `defaultSize` | `500 × 400 px` | Initial window dimensions |
+| `defaultPos` | `{ x: 100, y: 100 }` | Top-left corner of the window on open |
+
+<Tip>
+  Adjust `defaultSize` and `defaultPos` in the app definition if your welcome message is longer and needs a taller window, or if you want the Notepad to open in a different area of the desktop.
+</Tip>

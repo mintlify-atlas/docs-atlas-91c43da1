@@ -1,0 +1,132 @@
+---
+title: "Theming: Customize Colors and XP Visual Style"
+sidebarTitle: "Theming"
+description: "Modify the Windows XP visual style by editing Tailwind utility classes and the custom color tokens defined in the project's CSS, including the bliss wallpaper background."
+---
+
+The Windows XP Portfolio uses **Tailwind CSS** for all styling. There is no separate theme file or design token config — every color, spacing, and gradient is expressed as a Tailwind utility class directly on the element. To change the visual style, you find the relevant class in the source and replace it.
+
+## Custom CSS classes
+
+The project defines several custom classes in `assets/main.css` that go beyond Tailwind's defaults:
+
+### `bg-bliss-complex` — the desktop wallpaper
+
+The iconic rolling green hill and blue sky are reproduced as a CSS linear gradient:
+
+```css
+/* assets/main.css */
+.bg-bliss-complex {
+  background-image: linear-gradient(
+    to bottom,
+    #2989cc,
+    #3b9ce0 30%,
+    #66b5e6 45%,
+    #8bc74a 45%,
+    #68a332 70%,
+    #45b045
+  );
+}
+```
+
+It is applied to the root desktop `<div>` in `Desktop.js`:
+
+```jsx
+<div className="w-screen h-screen overflow-hidden bg-bliss-complex relative">
+```
+
+To replace it with a photo wallpaper, swap `bg-bliss-complex` for an inline `style` or a custom CSS class:
+
+```jsx
+// Photo wallpaper via inline style
+<div
+  className="w-screen h-screen overflow-hidden relative"
+  style={{ backgroundImage: "url('/wallpaper.jpg')", backgroundSize: "cover" }}
+>
+```
+
+### `bg-xp-selection` — the XP blue highlight
+
+Used throughout the app for selected items, hover highlights, and the Start Menu active state. The color resolves to `rgb(49 106 197)` — the classic Luna theme selection blue:
+
+```css
+/* Compiled from Tailwind config — the token value */
+.bg-xp-selection { background-color: rgb(49 106 197); }
+```
+
+You will find it on:
+- Menu bar hover states: `hover:bg-xp-selection hover:text-white`
+- Selected desktop icon labels
+- Start Menu app button hover
+- File Explorer item selection
+
+To swap the accent color, search for `bg-xp-selection` across the project and replace it with a Tailwind color (e.g. `bg-violet-600`) or an arbitrary value (e.g. `bg-[#7c3aed]`).
+
+### `font-tahoma` — the XP system font
+
+All OS chrome (window titles, menus, icon labels, taskbar) uses:
+
+```css
+.font-tahoma { font-family: Tahoma, "Trebuchet MS", sans-serif; }
+```
+
+Content areas like the Notepad body and Internet Explorer page use `font-inter` (Google Fonts Inter, loaded in `assets/main.css`).
+
+### `xp-scrollbar` — custom XP-style scrollbars
+
+Applied to any scrollable region (Notepad textarea, IE content area, File Explorer pane). Defined in `assets/main.css` using `::-webkit-scrollbar` pseudo-elements to produce the classic blue-thumb, tan-track XP scrollbar:
+
+```css
+.xp-scrollbar::-webkit-scrollbar        { width: 16px; height: 16px; }
+.xp-scrollbar::-webkit-scrollbar-track  { background: #f0f0f0; border-left: 1px solid #e0e0e0; }
+.xp-scrollbar::-webkit-scrollbar-thumb  { background: #cddbfa; border: 1px solid #7a96df; border-radius: 2px; }
+```
+
+To remove the custom scrollbar and use the browser default, remove the `xp-scrollbar` class from the relevant elements.
+
+## Window chrome: the Luna tan/beige
+
+All window menu bars, toolbars, and dialog backgrounds use:
+
+```jsx
+className="bg-[#ece9d8]"
+```
+
+This is the classic Windows XP Luna theme "silver" tan color (`rgb(236 233 216)`). It appears on the Notepad menu bar, the IE toolbar, the System Properties dialog, the WordPad toolbar, and the Start Menu footer bar.
+
+To change the window chrome color globally, search for `bg-[#ece9d8]` and replace it with your preferred color.
+
+## Title bar and taskbar gradients
+
+The window title bar and taskbar use named gradient tokens that map to real hex values:
+
+| Token | Value | Used for |
+|---|---|---|
+| `from-xp-title-start` | `#0058e6` | Title bar gradient start |
+| `via-xp-title-mid` | `#3a93ff` | Title bar gradient midpoint |
+| `to-xp-title-end` | `#0058e6` | Title bar gradient end |
+| `from-xp-taskbar-start` | `#245edb` | Taskbar gradient start |
+| `to-xp-taskbar-end` | `#0f36b0` | Taskbar gradient end |
+| `from-xp-start-btn-start` | `#349e4c` | Start button gradient start |
+| `to-xp-start-btn-end` | `#247937` | Start button gradient end |
+
+These are referenced in the `Window.js` and `Taskbar.js` components. To apply a custom brand color to the title bar, locate the gradient classes in `Window.js` and replace the `from-*` / `via-*` / `to-*` tokens with arbitrary values:
+
+```jsx
+// Custom purple title bar
+className="bg-gradient-to-r from-[#7c3aed] via-[#a855f7] to-[#7c3aed]"
+```
+
+## Skill bar gradient
+
+The System Properties "Skills" window uses a blue gradient for skill bars:
+
+```jsx
+<div className="h-full bg-gradient-to-b from-[#3a93ff] to-[#0054e3]" style={{ width: `${val}%` }} />
+```
+
+Replace `#3a93ff` and `#0054e3` with your brand colors to re-theme the skills visualization.
+
+<Note>
+  Tailwind CSS purges any class that is not present in your source files at build time. If you add new color classes (e.g. `bg-[#ff0000]`) to your components, they will be included automatically. However, if you only add them to a CSS file or generate them dynamically (e.g. via string interpolation), they will be stripped from the production bundle. Always write complete class names as static strings in your JSX.
+</Note>

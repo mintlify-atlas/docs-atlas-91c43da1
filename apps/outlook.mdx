@@ -1,0 +1,144 @@
+---
+title: "Outlook: Contact Form as a Mail Compose Window"
+sidebarTitle: "Outlook"
+description: "The Outlook app is a contact form styled as a Windows XP Outlook Express compose window with To, Cc, Subject fields, a message body, and a Send confirmation."
+---
+
+The Outlook app gives visitors a way to contact you through an interface that looks exactly like a Windows XP Outlook Express compose window. The **To** field is pre-filled with your portfolio email address, and clicking **Send** transitions the window to a success screen — no page reload, no external redirect.
+
+## Compose Window Layout
+
+The window is built from four stacked sections beneath the menu bar.
+
+### Menu Bar
+
+A grey (`#ece9d8`) strip with eight display-only labels: **File**, **Edit**, **View**, **Insert**, **Format**, **Tools**, **Message**, and **Help**.
+
+### Compose Toolbar
+
+The toolbar sits directly below the menu bar and contains three icon-buttons rendered as vertical stacks (icon above label):
+
+<CardGroup cols={3}>
+  <Card title="Send" icon="send">
+    A blue send/arrow icon with a **Send** label. This is the only functional button — clicking it triggers the send confirmation state.
+  </Card>
+  <Card title="Attach" icon="paperclip">
+    A paperclip icon with an **Attach** label. Display-only.
+  </Card>
+  <Card title="Spelling" icon="type">
+    A type/text icon with a **Spelling** label. Display-only.
+  </Card>
+</CardGroup>
+
+### Address Fields
+
+Three labelled input fields rendered against a white inset background:
+
+| Field | Default Value | Editable by Visitor |
+|---|---|---|
+| **To:** | `developer@portfolio.local` | No — `readOnly`, `bg-gray-50` |
+| **Cc:** | *(empty)* | Yes — free-text input |
+| **Subject:** | *(empty, placeholder: "Hello!")* | Yes — free-text input |
+
+The **To:** label and **Cc:** label are rendered as `<button>` elements with hover-underline styling, mimicking the Outlook behaviour of opening an address book when clicked (they are display-only in this implementation).
+
+### Message Body
+
+A full-height `<textarea>` with `placeholder="Type your message here..."`. It fills the remaining vertical space of the window and uses `xp-scrollbar` for overflow.
+
+```jsx title="components/os/Desktop.js — compose fields"
+<input
+  type="text"
+  value="developer@portfolio.local"
+  readOnly={true}
+  className="flex-1 border border-gray-300 px-1 py-0.5 text-sm bg-gray-50"
+/>
+```
+
+<Note>
+  The **To:** field is marked `readOnly` and pre-filled with `developer@portfolio.local`. This is a placeholder address — see the customisation section below to wire it to your real email or a backend handler.
+</Note>
+
+## Send Confirmation State
+
+When the visitor clicks **Send**, a `useState` flag flips from `false` to `true` and the compose window is replaced by a success screen:
+
+- A green circular badge containing a white checkmark icon
+- The heading **"Message Sent Successfully"**
+- The subtext: *"Your email has been placed in the Outbox and sent."*
+- An **OK** button that resets the state back to the compose view
+
+The transition also attempts to play the system notification sound `/ding.mp3` (the error is silently swallowed if the file is absent).
+
+```jsx title="components/os/Desktop.js — send handler"
+const handleSend = () => {
+  setSent(true);
+  new Audio("/ding.mp3").play().catch(() => {});
+};
+```
+
+<Tip>
+  Add a `/ding.mp3` file to your `/public` directory to play the classic Windows XP ding sound when the form is submitted. Any short notification sound in `.mp3` format will work.
+</Tip>
+
+## Wiring Up a Real Backend or `mailto:` Handler
+
+By default, clicking **Send** only toggles the local success state — no data is submitted anywhere. To send real messages you have two options:
+
+<Steps>
+  <Step title="Use a mailto: link">
+    Replace the `handleSend` function body with a `window.location.href` assignment:
+
+    ```js
+    const handleSend = () => {
+      const subject = encodeURIComponent(subjectValue);
+      const body    = encodeURIComponent(messageValue);
+      window.location.href =
+        `mailto:you@yourdomain.com?subject=${subject}&body=${body}`;
+    };
+    ```
+
+    You will also need to promote the `<input>` and `<textarea>` values to controlled state.
+  </Step>
+  <Step title="Use a form API service">
+    Services like [Formspree](https://formspree.io), [EmailJS](https://www.emailjs.com), or a custom Next.js API route can receive `fetch` POST requests:
+
+    ```js
+    const handleSend = async () => {
+      await fetch("https://formspree.io/f/YOUR_ID", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: toValue, subject: subjectValue, message: bodyValue }),
+      });
+      setSent(true);
+    };
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  Remember to update the **To:** field value from `developer@portfolio.local` to your real email address once you wire up a backend — or remove the `readOnly` prop so visitors can specify their own reply-to address.
+</Note>
+
+## App Definition Object
+
+The Outlook app is the sixth entry in the `apps` array:
+
+```js title="components/os/Desktop.js"
+{
+  id: "contact",
+  title: "New Message",
+  icon: <Mail className="text-yellow-600" />,
+  content: <OutlookApp />,
+  appType: "Mail Message",
+  defaultSize: { width: 550, height: 450 },
+  defaultPos: { x: 350, y: 200 },
+}
+```
+
+| Property | Value | Notes |
+|---|---|---|
+| `id` | `"contact"` | Deep-link with `#contact` in the URL hash |
+| `appType` | `"Mail Message"` | Shown in the taskbar button |
+| `defaultSize` | `550 × 450 px` | Compact — fits the compose form without wasted space |
+| `defaultPos` | `{ x: 350, y: 200 }` | Opens towards the right-centre of the desktop |

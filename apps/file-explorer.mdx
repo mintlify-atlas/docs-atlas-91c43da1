@@ -1,0 +1,125 @@
+---
+title: "File Explorer: Showcasing Your Projects"
+sidebarTitle: "File Explorer"
+description: "The File Explorer app displays your portfolio projects as folders in a two-pane Windows XP Explorer window with a sidebar showing System Tasks and Other Places."
+---
+
+The File Explorer app turns your portfolio projects into browsable folder icons, laid out in the classic two-pane Windows XP Explorer layout. Visitors can click any folder to select it, just like they would in a real file manager, while the left sidebar provides the familiar **System Tasks** and **Other Places** panels that defined the XP era.
+
+## Two-Pane Layout
+
+The window is divided horizontally into a fixed-width left sidebar and an expandable right content pane.
+
+### Left Sidebar
+
+The sidebar has a blue gradient background (`from-[#7496d4] to-[#5b7edc]`) and contains two collapsible panel cards:
+
+<CardGroup cols={2}>
+  <Card title="System Tasks" icon="settings">
+    Two quick-action links styled with hover-underline cursors:
+    - **View system info** (magnifying glass icon)
+    - **Add or remove** (grid icon)
+
+    These are display-only and do not perform any action.
+  </Card>
+  <Card title="Other Places" icon="folder">
+    Four navigation shortcuts (also display-only):
+    - My Computer
+    - My Documents
+    - Shared Documents
+    - Control Panel
+  </Card>
+</CardGroup>
+
+### Right Pane (Project Grid)
+
+The right pane is a white scrollable area that renders the `_e` projects array as a responsive CSS grid (`grid-cols-2 sm:grid-cols-3 md:grid-cols-4`). Each project appears as a clickable icon tile with:
+
+- A **folder icon** (yellow, `fill-yellow-200`) for items with `type: "File Folder"`
+- A **file-text icon** (blue, `fill-blue-100`) for items with `type: "Text Document"`
+- The project **name** beneath the icon, highlighted with an XP selection colour when clicked
+
+## The `_e` Projects Array
+
+All projects are defined in the `_e` array in `Desktop.js`. Here is the full array from the source:
+
+```js title="components/os/Desktop.js"
+const _e = [
+  { id: 1, name: "E-Commerce Platform", date: "10/12/2023", type: "File Folder" },
+  { id: 2, name: "SaaS Dashboard",      date: "08/05/2023", type: "File Folder" },
+  { id: 3, name: "AI Chat Interface",   date: "01/20/2024", type: "File Folder" },
+  { id: 4, name: "Mobile App API",      date: "11/30/2023", type: "File Folder" },
+  { id: 5, name: "README.txt",          date: "Today",      type: "Text Document" },
+];
+```
+
+Each object has four fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `number` | Unique key used by React's list renderer |
+| `name` | `string` | Displayed below the icon in the grid |
+| `date` | `string` | Currently stored but not rendered in the UI |
+| `type` | `"File Folder"` \| `"Text Document"` | Controls which icon is shown |
+
+## How to Add or Edit Projects
+
+<Steps>
+  <Step title="Open Desktop.js">
+    Navigate to `components/os/Desktop.js` and find the `_e` array near the top of the file (just before the `ze` File Explorer component definition).
+  </Step>
+  <Step title="Add a new project">
+    Append a new object to the array. Use `"File Folder"` for project directories and `"Text Document"` for standalone files like README or PDF links:
+
+    ```js
+    { id: 6, name: "Design System", date: "03/15/2024", type: "File Folder" },
+    ```
+  </Step>
+  <Step title="Remove a project">
+    Delete the object from the array. Make sure remaining `id` values stay unique — they are only used as React `key` props.
+  </Step>
+  <Step title="Rename a project">
+    Change the `name` field. The name is rendered as-is, so spaces and special characters are fine.
+  </Step>
+</Steps>
+
+<Note>
+  Clicking a folder tile in the explorer selects it visually (blue XP-selection highlight) but does not open a new window or navigate anywhere. To add click-through behaviour — such as opening a project detail window — you would need to extend the `onClick` handler in the `ze` component and add a new app to the `apps` array.
+</Note>
+
+<Tip>
+  The `date` field is stored in each project object but is not currently displayed in the grid view. You could render it as a subtitle beneath the project name by editing the tile JSX inside the `.map()` call in the `ze` component.
+</Tip>
+
+## Address Bar
+
+The address bar at the top of the File Explorer window displays a fixed, decorative path:
+
+```
+C:\My Documents\Projects
+```
+
+This is a read-only `<span>` — it does not reflect the actual selected folder. Edit the string in the address bar JSX inside the `ze` component if you want to show a different path.
+
+## App Definition Object
+
+The File Explorer app is the third entry in the `apps` array:
+
+```js title="components/os/Desktop.js"
+{
+  id: "projects",
+  title: "Projects",
+  icon: <Folder className="text-yellow-500 fill-yellow-200" />,
+  content: <FileExplorerApp />,
+  appType: "File Folder",
+  defaultSize: { width: 700, height: 500 },
+  defaultPos: { x: 200, y: 150 },
+}
+```
+
+| Property | Value | Notes |
+|---|---|---|
+| `id` | `"projects"` | Deep-link with `#projects` in the URL hash |
+| `appType` | `"File Folder"` | Shown in the taskbar and window chrome |
+| `defaultSize` | `700 × 500 px` | Wide enough to display 4 columns in the grid |
+| `defaultPos` | `{ x: 200, y: 150 }` | Offset slightly from the About Me window |

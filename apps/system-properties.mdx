@@ -1,0 +1,167 @@
+---
+title: "System Properties: Showcase Your Dev Skills"
+sidebarTitle: "System Properties"
+description: "The System Properties app displays your technical skills as progress bars inside a tabbed dialog styled after the Windows XP System Properties control panel."
+---
+
+The System Properties app is a direct homage to the **System Properties** dialog from Windows XP — the one you opened by right-clicking "My Computer" and choosing Properties. Here, instead of RAM and CPU specs, each tab reveals a category of your development skills rendered as animated progress bars, giving recruiters a fun and memorable way to assess your technical profile.
+
+## The Four Tabs
+
+The dialog has four tabs. Clicking a tab label re-renders the content panel below it without closing or re-opening the window.
+
+<CardGroup cols={4}>
+  <Card title="General" icon="monitor">
+    OS metadata, registered name, and joke hardware specs
+  </Card>
+  <Card title="Frontend" icon="layout">
+    Five frontend skills with percentage progress bars
+  </Card>
+  <Card title="Backend" icon="database">
+    Five backend/database skills with percentage progress bars
+  </Card>
+  <Card title="Tools" icon="wrench">
+    Version control and design tool lists in a two-column grid
+  </Card>
+</CardGroup>
+
+## General Tab
+
+The General tab mimics the real Windows XP System Properties General page, with a monitor icon on the left and two info blocks on the right.
+
+| Field | Value |
+|---|---|
+| **System** | Developer OS |
+| **Version** | 2024 |
+| **Registered to** | Frontend Developer |
+| **Phone** | 555-123-4567 |
+| **Processor** | React.js Processor 3.0GHz |
+| **RAM** | 32 GB RAM (Coffee Powered) |
+
+The processor and RAM lines use `Cpu` and `HardDrive` Lucide icons to complete the aesthetic.
+
+<Tip>
+  Update the **Registered to** name and the processor/RAM joke lines in the `Se` component to reflect your own name and personality. These fields are plain JSX strings — no config file required.
+</Tip>
+
+## Frontend Tab
+
+The Frontend tab renders under the heading **"Frontend Capabilities"** with a monitor icon. Each skill is a horizontal row containing a right-aligned label and a blue gradient progress bar.
+
+The skill data from the source:
+
+```js title="components/os/Desktop.js — Frontend skills array"
+[
+  { name: "React / Next.js", val: 95 },
+  { name: "TypeScript",      val: 90 },
+  { name: "Tailwind CSS",    val: 95 },
+  { name: "Framer Motion",   val: 80 },
+  { name: "HTML / CSS",      val: 98 },
+]
+```
+
+Progress bars use a blue gradient (`from-[#3a93ff] to-[#0054e3]`) and their width is set via inline `style={{ width: \`${val}%\` }}`.
+
+## Backend Tab
+
+The Backend tab renders under the heading **"Backend & Database"** with a hard-drive icon. Progress bars use a green gradient (`from-[#349e4c] to-[#247937]`).
+
+The skill data from the source:
+
+```js title="components/os/Desktop.js — Backend skills array"
+[
+  { name: "Node.js",      val: 85 },
+  { name: "PostgreSQL",   val: 75 },
+  { name: "Prisma ORM",   val: 80 },
+  { name: "REST APIs",    val: 90 },
+  { name: "GraphQL",      val: 70 },
+]
+```
+
+## Tools Tab
+
+The Tools tab uses a two-column grid layout. Each column is a card-style box (`border border-gray-300`, `bg-gray-50`) with a bold heading and a bulleted list.
+
+<CardGroup cols={2}>
+  <Card title="Version Control">
+    - Git
+    - GitHub / GitLab
+    - CI/CD Pipelines
+  </Card>
+  <Card title="Design">
+    - Figma
+    - Adobe Creative Suite
+    - UI/UX Principles
+  </Card>
+</CardGroup>
+
+## How to Edit Skill Percentages and Tab Names
+
+All skill data is defined as inline array literals inside the `Se` component in `Desktop.js`.
+
+<Steps>
+  <Step title="Change a skill percentage">
+    Find the relevant array (`Frontend` or `Backend`) and update the `val` field. Values are integers from `0` to `100`:
+
+    ```js
+    { name: "TypeScript", val: 95 },  // was 90
+    ```
+  </Step>
+  <Step title="Add a new skill">
+    Append a new object to the array. The row renders automatically — no additional JSX needed:
+
+    ```js
+    { name: "Astro", val: 75 },
+    ```
+  </Step>
+  <Step title="Rename a skill">
+    Update the `name` field. The label is right-aligned in a `w-32` container — names longer than ~16 characters may wrap.
+  </Step>
+  <Step title="Rename a tab">
+    The tab names are defined in the `a` array at the top of the `Se` component:
+
+    ```js
+    const a = ["General", "Frontend", "Backend", "Tools"];
+    ```
+
+    Change any string here. The active tab comparison is string-based, so the tab content `if` blocks (`t === "Frontend"`) must also be updated to match.
+  </Step>
+  <Step title="Add a new tab">
+    Push a new string to the `a` array and add a corresponding `t === "YourTab" &&` JSX block inside the content panel. Follow the same pattern as the existing Frontend/Backend skill arrays.
+  </Step>
+</Steps>
+
+<Note>
+  Progress bar widths are set via inline `style` props — not Tailwind width utilities — because the percentage values are dynamic. This means they will not be purged by the Tailwind CSS build step regardless of the value you set.
+</Note>
+
+## Dialog Buttons
+
+The bottom of the window has three buttons: **OK**, **Cancel**, and a greyed-out **Apply**. These are display-only and do not close the window or persist state (the window is closed via the standard XP title-bar X button managed by the `WindowManager` context).
+
+## App Definition Object
+
+The System Properties app is the fourth entry in the `apps` array:
+
+```js title="components/os/Desktop.js"
+{
+  id: "skills",
+  title: "System Properties",
+  icon: <Settings className="text-gray-600" />,
+  content: <SystemPropertiesApp />,
+  appType: "Control Panel Item",
+  defaultSize: { width: 450, height: 500 },
+  defaultPos: { x: 250, y: 100 },
+}
+```
+
+| Property | Value | Notes |
+|---|---|---|
+| `id` | `"skills"` | Deep-link with `#skills` in the URL hash |
+| `appType` | `"Control Panel Item"` | Shown in the taskbar button |
+| `defaultSize` | `450 × 500 px` | Sized to the classic System Properties dialog proportions |
+| `defaultPos` | `{ x: 250, y: 100 }` | Opens near the centre of the desktop |
+
+<Tip>
+  The `450 × 500 px` default size is a deliberate nod to the actual Windows XP System Properties dialog dimensions. Avoid making the window too wide — the narrow layout with right-aligned labels and full-width bars is the design intent.
+</Tip>

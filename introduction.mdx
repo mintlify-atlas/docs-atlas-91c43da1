@@ -1,0 +1,98 @@
+---
+title: "Windows XP Portfolio: Build a Retro React Developer Portfolio"
+sidebarTitle: "Introduction"
+description: "Windows XP Portfolio is a React 18 app that turns your developer portfolio into a fully interactive Windows XP desktop with draggable windows, a taskbar, and built-in apps."
+---
+
+Windows XP Portfolio is a single-page React application that replaces the conventional developer portfolio with a fully interactive Windows XP desktop experience. Visitors land on a simulated XP desktop complete with draggable and resizable windows, a taskbar with a live clock, a Start Menu, and clickable desktop icons — all powered by a central Window Manager context that tracks focus, z-index stacking, minimise state, and URL hash routing so that every open window gets its own shareable link.
+
+<Note>
+  This is a **fork-and-customise** project, not an npm package. You clone or fork the repository, swap in your own content, and deploy the static output. There is no `npm install windows-xp-portfolio` — the whole portfolio is the source code.
+</Note>
+
+## What it is
+
+The project renders a pixel-faithful Windows XP UI in the browser using React 18 and Tailwind CSS. Every visible element — the teal "Bliss" desktop gradient, the Luna-style window chrome with a coloured title bar, the toolbar-equipped app interiors, the taskbar with its Start button and system clock — is a React component styled entirely with Tailwind utility classes and Lucide icons. No images are required for the chrome itself.
+
+When a visitor double-clicks a desktop icon (or arrives via a URL hash such as `#about`), the `WindowManagerContext` opens the corresponding window, brings it to the front, and updates `window.location.hash` automatically. Closing the last window clears the hash. This makes individual sections of your portfolio bookmarkable and shareable without any router library.
+
+## Key features
+
+- **Draggable and resizable windows** — each window can be freely repositioned and resized on the desktop canvas.
+- **Window Manager context** — a single React context tracks all open windows, their z-index stack, focus state, minimise state, and positions.
+- **Taskbar** — shows a button for every open window and a live system clock; clicking a button restores or focuses the matching window.
+- **Start Menu** — a themed launcher that lists all apps and can be toggled from the taskbar Start button.
+- **Desktop icons** — one icon per app rendered on the desktop, launchable by click.
+- **URL hash routing** — opening a window sets `#<appId>` in the URL; arriving with a hash pre-opens the matching app.
+- **Six built-in apps** — ready-to-customise components covering the most common portfolio sections (see below).
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| UI library | React 18 (`react@18.3.1`) |
+| Build tool | Vite |
+| Styling | Tailwind CSS |
+| Icons | Lucide React (`lucide-react@0.522.0`) |
+| Deployment | Any static host (GitHub Pages, Vercel, Netlify, Cloudflare Pages) |
+
+## Who it is for
+
+Windows XP Portfolio is aimed at developers who want a memorable, personality-driven online presence that doubles as a demonstration of their front-end craft. It works especially well as a talking point in interviews or as a fun side-project showcase — visitors instinctively interact with the windows rather than passively scrolling a page.
+
+## Built-in apps
+
+Each app is a self-contained React component registered in the `apps` array inside `components/os/Desktop.js`. All six are ready to customise with your own content:
+
+<CardGroup cols={2}>
+  <Card
+    title="Notepad"
+    icon="file-text"
+    href="/apps/notepad"
+  >
+    A plain-text welcome note rendered in a faithful Notepad window with a menu bar and scrollable textarea. The default entry point opened on first load.
+  </Card>
+  <Card
+    title="Internet Explorer"
+    icon="globe"
+    href="/apps/internet-explorer"
+  >
+    An "About Me" page styled as a full Internet Explorer browser window, complete with Back/Forward toolbar buttons, an address bar, and a content pane.
+  </Card>
+  <Card
+    title="File Explorer"
+    icon="folder"
+    href="/apps/file-explorer"
+  >
+    A "My Projects" folder browser that renders project entries as folder and file icons in a two-pane Explorer layout with a sidebar task panel.
+  </Card>
+  <Card
+    title="WordPad"
+    icon="file-pen"
+    href="/apps/wordpad"
+  >
+    A resume or CV rendered as a rich-text document inside a WordPad window with a formatting toolbar (Bold, Italic, Underline, font selectors).
+  </Card>
+  <Card
+    title="Outlook"
+    icon="mail"
+    href="/apps/outlook"
+  >
+    A contact form styled as an Outlook "New Message" compose window with To/Cc/Subject fields, a message body, and a Send button with a success confirmation.
+  </Card>
+  <Card
+    title="System Properties"
+    icon="monitor"
+    href="/apps/system-properties"
+  >
+    A skills dashboard rendered as the Windows XP "System Properties" dialog with tabbed panels (General, Frontend, Backend, Tools) and animated progress bars.
+  </Card>
+</CardGroup>
+
+## Next steps
+
+Ready to get your portfolio running locally in minutes?
+
+<Card title="Quickstart" icon="rocket" href="/quickstart">
+  Fork the repo, install dependencies, run the Vite dev server, and deploy — all in under 10 minutes.
+</Card>

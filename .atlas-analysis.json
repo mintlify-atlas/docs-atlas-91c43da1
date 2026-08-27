@@ -1,0 +1,77 @@
+{
+  "projectType": "frontend",
+  "projectName": "Windows XP Portfolio",
+  "projectDescription": "A React-based developer portfolio website styled as a Windows XP desktop environment, featuring draggable windows, a taskbar, Start Menu, and built-in apps like Notepad, Internet Explorer, File Explorer, WordPad, and Outlook.",
+  "theme": "almond",
+  "primaryColor": "#0366d6",
+  "lightColor": null,
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Overview",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Architecture",
+            "pages": ["architecture/overview", "architecture/window-manager", "architecture/components"]
+          }
+        ]
+      },
+      {
+        "tab": "Built-in Apps",
+        "groups": [
+          {
+            "group": "Desktop Apps",
+            "pages": [
+              "apps/notepad",
+              "apps/internet-explorer",
+              "apps/file-explorer",
+              "apps/wordpad",
+              "apps/outlook",
+              "apps/system-properties"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Customization",
+        "groups": [
+          {
+            "group": "Extending the Portfolio",
+            "pages": [
+              "customization/adding-apps",
+              "customization/desktop-icons",
+              "customization/theming",
+              "customization/deployment"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Windows XP-style desktop UI with draggable, resizable windows",
+    "Window Manager context for global state management",
+    "Built-in apps: Notepad, Internet Explorer, File Explorer, WordPad, Outlook, System Properties",
+    "Taskbar with active window tracking and Start Menu",
+    "Desktop icons with double-click to open",
+    "Simulated Recycle Bin easter egg",
+    "URL hash-based routing for deep linking to apps",
+    "React 18 + Lucide icons + Tailwind CSS"
+  ],
+  "publicApiSurface": [
+    "WindowManagerContext — openWindow(app), closeWindow(id), minimizeWindow(id), restoreWindow(id), focusWindow(id), toggleStartMenu()",
+    "useWindowManager() hook",
+    "WindowManagerProvider component",
+    "Desktop component",
+    "Window component",
+    "Taskbar component",
+    "DesktopIcon component",
+    "StartMenu component",
+    "App definitions array (id, title, icon, content, appType, defaultSize, defaultPos)"
+  ]
+}

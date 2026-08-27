@@ -1,47 +1,143 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with Windows XP Portfolio in Minutes"
+sidebarTitle: "Quickstart"
+description: "Fork the Windows XP Portfolio repo, swap in your own content, run it locally with Vite, and deploy to any static host in under 10 minutes."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+This guide walks you through cloning the Windows XP Portfolio, installing its dependencies, running the Vite development server, and putting your customised portfolio live on a static host. The whole process takes under ten minutes.
 
 ## Prerequisites
 
-Before you begin, you must have:
+Before you begin, make sure you have the following installed:
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+- **Node.js 18 or later** — [nodejs.org](https://nodejs.org)
+- **Git** — [git-scm.com](https://git-scm.com)
 
-## Get started
+You can verify your versions with:
+
+```bash
+node --version   # should print v18.x.x or higher
+git --version
+```
+
+## Setup
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Fork or clone the repository">
+    Fork the repo on GitHub so you have your own copy to push changes to, then clone it locally:
 
     ```bash
-    npm install your-package
+    git clone https://github.com/apursley2012/windows-xp.git
+    cd windows-xp
+    ```
+
+    If you forked it first, replace the URL with your own fork's clone URL.
+  </Step>
+
+  <Step title="Install dependencies">
+    Install all required packages. The project uses React 18, Vite, Tailwind CSS, and Lucide React.
+
+    <CodeGroup>
+      ```bash npm
+      npm install
+      ```
+
+      ```bash yarn
+      yarn install
+      ```
+
+      ```bash pnpm
+      pnpm install
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Run the development server">
+    Start the Vite dev server with hot-module replacement:
+
+    ```bash
+    npm run dev
+    ```
+
+    Vite will print a local URL (typically `http://localhost:5173`). Open it in your browser — you should see the Windows XP desktop with the default Welcome.txt Notepad window already open.
+  </Step>
+
+  <Step title="Customise your content">
+    All six apps are defined in a single array in `components/os/Desktop.js`. Open that file and edit the objects inside the `apps` array to replace the placeholder content with your own. Each app definition follows this shape:
+
+    ```js
+    {
+      id: "welcome",           // used as the URL hash (#welcome)
+      title: "Welcome.txt - Notepad",  // window title bar text
+      icon: <FileText />,      // Lucide React icon element
+      content: <NotepadApp />, // React component rendered inside the window
+      appType: "Text Document",        // label shown in the taskbar tooltip
+      defaultSize: { width: 500, height: 400 },  // initial window dimensions (px)
+      defaultPos:  { x: 100,   y: 100  },        // initial window position (px from top-left)
+    }
+    ```
+
+    The six built-in entries and their default sizes are:
+
+    | `id` | `title` | `defaultSize` |
+    |---|---|---|
+    | `welcome` | Welcome.txt - Notepad | 500 × 400 |
+    | `about` | About Me - Microsoft Internet Explorer | 800 × 600 |
+    | `projects` | Projects (File Explorer) | 700 × 500 |
+    | `skills` | System Properties | 450 × 500 |
+    | `resume` | Resume.doc - WordPad | 650 × 700 |
+    | `contact` | New Message (Outlook) | 550 × 450 |
+
+    To change what appears inside a window, edit the component passed to `content`. You can replace the inline JSX with any React component you like — import your own component or write the JSX inline.
+  </Step>
+
+  <Step title="Build for production">
+    When you are happy with your changes, create an optimised static build:
+
+    ```bash
+    npm run build
+    ```
+
+    Vite outputs the production bundle to the `dist/` directory. The entire portfolio is a static site — no server-side runtime is required.
+
+    Preview the production build locally before deploying:
+
+    ```bash
+    npm run preview
     ```
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
 
-    ```bash
-    your-cli init
-    ```
-  </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
-
-    ```bash
-    your-cli start
-    ```
+  <Step title="Deploy">
+    Copy the contents of `dist/` to any static host. See the [deployment options](#deployment-options) section below for platform-specific notes.
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Deployment options
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
+### GitHub Pages
+
+Push your repo to GitHub and enable **Pages** in the repository settings (Settings → Pages → Deploy from branch `main`, folder `/ (root)` or configure a GitHub Actions workflow that runs `npm run build` and publishes `dist/`).
+
+<Tip>
+  The repository already contains a `.nojekyll` file in the root. This file tells GitHub Pages to skip Jekyll processing and serve the Vite-generated assets — including files and folders whose names begin with an underscore — without modification. Make sure this file is present in your `dist/` output or the `gh-pages` branch; the Vite build copies it automatically if it is in the project root.
 </Tip>
+
+### Vercel
+
+Import the repository in the [Vercel dashboard](https://vercel.com). Vercel auto-detects Vite and sets the build command to `npm run build` and the output directory to `dist`. No additional configuration is needed — click **Deploy**.
+
+### Netlify
+
+Drag and drop the `dist/` folder onto the [Netlify drop zone](https://app.netlify.com/drop), or connect your GitHub repository and set:
+
+- **Build command:** `npm run build`
+- **Publish directory:** `dist`
+
+### Cloudflare Pages
+
+In the [Cloudflare Pages dashboard](https://pages.cloudflare.com), create a new project connected to your GitHub repo and set:
+
+- **Build command:** `npm run build`
+- **Build output directory:** `dist`
+
+Cloudflare Pages deploys to a global CDN automatically on every push to your main branch.

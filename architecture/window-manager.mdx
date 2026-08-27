@@ -1,0 +1,229 @@
+---
+title: "Window Manager: Global State for Open Windows"
+sidebarTitle: "Window Manager"
+description: "The WindowManagerContext manages every open window's state — position, z-index, focus, and minimize — using React context and useCallback hooks."
+---
+
+`WindowManagerContext` is the single source of truth for everything that can be open on the desktop. It lives in `context/WindowManagerContext.js` and is consumed by every component that needs to open, close, minimize, restore, or focus a window — including `Desktop`, `Taskbar`, `DesktopIcon`, `StartMenu`, and `Window` itself. No window state is duplicated in local component state; all reads and writes go through this context.
+
+## Provider
+
+Wrap the root of the application (or any sub-tree that needs access to the window system) in `WindowManagerProvider`:
+
+```jsx
+import { WindowManagerProvider } from "./context/WindowManagerContext";
+
+function App() {
+  return (
+    <WindowManagerProvider>
+      <Desktop />
+    </WindowManagerProvider>
+  );
+}
+```
+
+`WindowManagerProvider` initialises three pieces of internal state:
+
+| State | Initial value | Purpose |
+|---|---|---|
+| `windows` | `[]` | Array of every window-state object currently tracked |
+| `zCounter` | `10` | Monotonically increasing integer used to assign z-index values |
+| `isStartMenuOpen` | `false` | Controls Start Menu visibility |
+
+A `useEffect` watches `windows` and updates `window.location.hash` whenever the focused, non-minimised window changes. If no window is open the hash is cleared.
+
+## Consuming the Context — `useWindowManager()`
+
+Import and call `useWindowManager()` inside any component that is a descendant of `WindowManagerProvider`:
+
+```js
+import { useWindowManager } from "./context/WindowManagerContext";
+
+function MyComponent() {
+  const {
+    windows,
+    openWindow,
+    closeWindow,
+    minimizeWindow,
+    restoreWindow,
+    focusWindow,
+    toggleStartMenu,
+    isStartMenuOpen,
+  } = useWindowManager();
+  // ...
+}
+```
+
+<Note>
+  `useWindowManager()` throws an error with the message `"useWindowManager must be used within WindowManagerProvider"` if called outside the provider tree. This makes misconfigured component hierarchies immediately obvious during development.
+</Note>
+
+## Context Shape
+
+The object returned by `useWindowManager()` contains the following fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `windows` | `WindowState[]` | All windows currently tracked (open and minimised) |
+| `openWindow` | `(app: AppDefinition) => void` | Open a new window or restore an existing one |
+| `closeWindow` | `(id: string) => void` | Remove a window from the `windows` array |
+| `minimizeWindow` | `(id: string) => void` | Hide a window to the taskbar |
+| `restoreWindow` | `(id: string) => void` | Un-minimise a window and focus it |
+| `focusWindow` | `(id: string) => void` | Bring a window to the front |
+| `toggleStartMenu` | `() => void` | Show or hide the Start Menu |
+| `isStartMenuOpen` | `boolean` | Current Start Menu visibility |
+
+## Window State Object
+
+Each entry in the `windows` array conforms to this shape:
+
+<ParamField path="id" type="string" required>
+  Unique identifier for the window. Matches the `id` of the app definition object (e.g. `"about"`, `"projects"`). Also used as the URL hash value.
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  Text shown in the window's title bar (e.g. `"About Me - Microsoft Internet Explorer"`).
+</ParamField>
+
+<ParamField path="icon" type="ReactNode" required>
+  16 × 16 icon rendered in the title bar and in the taskbar button alongside the window title.
+</ParamField>
+
+<ParamField path="content" type="ReactNode" required>
+  The app component rendered inside the window's content area.
+</ParamField>
+
+<ParamField path="appType" type="string">
+  Human-readable category string shown in the Start Menu beneath the title (e.g. `"Application"`, `"File Folder"`, `"Rich Text Document"`).
+</ParamField>
+
+<ParamField path="defaultSize" type="{ width: number, height: number }">
+  Preferred initial dimensions in pixels. Falls back to `600 × 400` if omitted. On screens narrower than 768 px the window expands to fill the viewport instead.
+</ParamField>
+
+<ParamField path="defaultPos" type="{ x: number, y: number }">
+  Preferred initial position in pixels from the top-left corner. Falls back to a centred position with a small random jitter so stacked windows are visually offset.
+</ParamField>
+
+<ParamField path="isOpen" type="boolean">
+  `true` while the window is tracked in the `windows` array. Set to `true` by `openWindow`, removed from the array entirely by `closeWindow`.
+</ParamField>
+
+<ParamField path="isMinimized" type="boolean">
+  `true` when the window is hidden to the taskbar. The `Window` component renders `null` when this flag is set.
+</ParamField>
+
+<ParamField path="isFocused" type="boolean">
+  `true` for at most one window at a time. The `Window` component switches its title bar gradient and border colour based on this flag.
+</ParamField>
+
+<ParamField path="zIndex" type="number">
+  CSS `z-index` applied to the window's root element. Higher values appear in front of lower ones. Assigned by reading the current `zCounter` value.
+</ParamField>
+
+## Function Reference
+
+### `openWindow(app)`
+
+Adds a new window to the `windows` array, or restores an existing one if a window with `app.id` is already tracked.
+
+```js
+// New window: appended to the array with isOpen: true, isFocused: true,
+// isMinimized: false, and zIndex = zCounter + 1.
+// All other windows have isFocused set to false.
+openWindow({ id: "about", title: "About Me - Microsoft Internet Explorer", ... });
+
+// Existing window (e.g. minimised): equivalent to restoreWindow(app.id).
+openWindow(apps.find(a => a.id === "about"));
+```
+
+`toggleStartMenu` is also called internally to close the Start Menu whenever `openWindow` is triggered.
+
+---
+
+### `closeWindow(id)`
+
+Removes the window from the `windows` array entirely. After removal, `closeWindow` scans the remaining windows and sets `isFocused: true` on the one with the highest `zIndex`, so focus always moves to the next topmost window automatically.
+
+```js
+closeWindow("about");
+```
+
+---
+
+### `minimizeWindow(id)`
+
+Sets `isMinimized: true` and `isFocused: false` on the target window. Then finds the highest-z-index non-minimised window and gives it focus.
+
+```js
+minimizeWindow("projects");
+```
+
+---
+
+### `restoreWindow(id)`
+
+Sets `isMinimized: false` on the target window, then calls `focusWindow(id)` to bring it to the front.
+
+```js
+restoreWindow("projects");
+```
+
+---
+
+### `focusWindow(id)`
+
+Increments the global `zCounter` by 1 and applies the new value as `zIndex` to the target window. Sets `isFocused: true` on the target and `isFocused: false` on all others. Closes the Start Menu.
+
+```js
+focusWindow("welcome");
+```
+
+---
+
+### `toggleStartMenu()`
+
+Flips `isStartMenuOpen` between `true` and `false`. No other state is affected.
+
+```js
+toggleStartMenu();
+```
+
+## Opening a Window Programmatically
+
+Any component inside `WindowManagerProvider` can open a window by calling `openWindow` with a complete app-definition object. Here is a minimal example of a custom button that opens the Skills window:
+
+```jsx
+import { useWindowManager } from "./context/WindowManagerContext";
+import { Settings } from "lucide-react";
+
+const skillsApp = {
+  id: "skills",
+  title: "System Properties",
+  icon: <Settings className="text-gray-600" />,
+  content: <SystemProperties />,
+  appType: "Control Panel Item",
+  defaultSize: { width: 450, height: 500 },
+  defaultPos: { x: 250, y: 100 },
+};
+
+export function OpenSkillsButton() {
+  const { openWindow } = useWindowManager();
+
+  return (
+    <button onClick={() => openWindow(skillsApp)}>
+      View Skills
+    </button>
+  );
+}
+```
+
+<Tip>
+  Because `openWindow` is wrapped in `useCallback` and only re-creates when `focusWindow` or `zCounter` changes, it is safe to include in dependency arrays without triggering unnecessary re-renders.
+</Tip>
+
+## Z-Index Strategy
+
+The `zCounter` starts at `10` and increments by 1 every time `openWindow` or `focusWindow` is called. Because z-index values are only ever assigned from this monotonically increasing counter, the most recently focused window always has the largest value and therefore always renders on top — no explicit "sort by z-index" step is needed.
+
+The Taskbar is positioned at `z-index: 9999` and the Start Menu at `z-index: 9998`, placing both permanently above any application window regardless of how many windows have been opened or focused.
