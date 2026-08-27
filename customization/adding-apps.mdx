@@ -1,5 +1,5 @@
 ---
-title: "Add a New Desktop App to Your XP Portfolio"
+title: "Add a New Desktop App to Your Windows XP Portfolio"
 sidebarTitle: "Adding Apps"
 description: "Learn how to define a new app, create its content component, add it to the Desktop apps array, and place a DesktopIcon for it, all in one edit."
 ---
@@ -94,7 +94,7 @@ You can use any string — it is purely cosmetic, displayed as the subtitle in t
 
     <div className="absolute top-0 left-0 bottom-10 p-2 flex flex-col flex-wrap gap-2 content-start">
       {/* ...existing icons... */}
-      <n
+      <DesktopIcon
         app={o.find(a => a.id === "blog")}
         label="My Blog"
         icon={<Globe className="text-white" />}
@@ -150,7 +150,7 @@ const o = [
 ];
 
 // 3. Add a DesktopIcon in the icon grid JSX
-<n
+<DesktopIcon
   app={o[o.length - 1]}   // reference to the last entry (your new app)
   label="Blog.txt"
   icon={<FileText className="text-white fill-blue-400" />}

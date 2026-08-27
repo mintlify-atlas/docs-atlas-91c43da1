@@ -137,7 +137,7 @@ openWindow({ id: "about", title: "About Me - Microsoft Internet Explorer", ... }
 openWindow(apps.find(a => a.id === "about"));
 ```
 
-`toggleStartMenu` is also called internally to close the Start Menu whenever `openWindow` is triggered.
+`isStartMenuOpen` is also set to `false` internally whenever `openWindow` is triggered, closing the Start Menu automatically.
 
 ---
 

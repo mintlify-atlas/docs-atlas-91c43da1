@@ -1,7 +1,7 @@
 ---
-title: "Outlook: Contact Form as a Mail Compose Window"
+title: "Outlook: Contact Form as a Windows XP Compose Window"
 sidebarTitle: "Outlook"
-description: "The Outlook app is a contact form styled as a Windows XP Outlook Express compose window with To, Cc, Subject fields, a message body, and a Send confirmation."
+description: "The Outlook app renders a contact form as a Windows XP Outlook Express compose window with To, Cc, and Subject fields, a message body, and a Send button."
 ---
 
 The Outlook app gives visitors a way to contact you through an interface that looks exactly like a Windows XP Outlook Express compose window. The **To** field is pre-filled with your portfolio email address, and clicking **Send** transitions the window to a success screen — no page reload, no external redirect.
@@ -68,7 +68,7 @@ When the visitor clicks **Send**, a `useState` flag flips from `false` to `true`
 - The subtext: *"Your email has been placed in the Outbox and sent."*
 - An **OK** button that resets the state back to the compose view
 
-The transition also attempts to play the system notification sound `/ding.mp3` (the error is silently swallowed if the file is absent).
+The transition also attempts to play the system notification sound `/ding.mp3` — a hidden easter egg that mimics the classic Windows XP ding on send. The error is silently swallowed if the file is absent.
 
 ```jsx title="components/os/Desktop.js — send handler"
 const handleSend = () => {
